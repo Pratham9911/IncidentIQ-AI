@@ -8,34 +8,98 @@ import { API_BASE } from '../../../lib/api';
 
 function formatMarkdownText(text) {
   if (!text) return null;
-  const tokenRegex = /(\*\*([^*]+)\*\*|\*([^*]+)\*)/g;
-  const tokens = [];
-  let lastIndex = 0;
-  let match;
 
-  while ((match = tokenRegex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      tokens.push(text.slice(lastIndex, match.index));
+  const parseInline = (line) => {
+    const inlineRegex = /(\*\*([^*]+)\*\*|\*([^*]+)\*|`([^`]+)`)/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = inlineRegex.exec(line)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(line.slice(lastIndex, match.index));
+      }
+      if (match[2]) {
+        parts.push(<strong key={`strong-${match.index}`}>{match[2]}</strong>);
+      } else if (match[3]) {
+        parts.push(<em key={`em-${match.index}`}>{match[3]}</em>);
+      } else if (match[4]) {
+        parts.push(<code key={`code-${match.index}`} className="rounded bg-slate-900 px-1 py-0.5 text-[13px] text-slate-200">{match[4]}</code>);
+      }
+      lastIndex = inlineRegex.lastIndex;
     }
-    if (match[2]) {
-      tokens.push(<strong key={`strong-${match.index}`}>{match[2]}</strong>);
-    } else if (match[3]) {
-      tokens.push(<em key={`em-${match.index}`}>{match[3]}</em>);
+
+    if (lastIndex < line.length) {
+      parts.push(line.slice(lastIndex));
     }
-    lastIndex = tokenRegex.lastIndex;
-  }
 
-  if (lastIndex < text.length) {
-    tokens.push(text.slice(lastIndex));
-  }
+    return parts.length > 0 ? parts : line;
+  };
 
-  return tokens.flatMap((token, tokenIndex) => {
-    if (typeof token !== 'string') return token;
-    return token.split('\n').flatMap((line, lineIndex, arr) => {
-      if (lineIndex === arr.length - 1) return line;
-      return [line, <br key={`br-${tokenIndex}-${lineIndex}`} />];
-    });
+  const lines = text.split('\n');
+  const nodes = [];
+  let listBuffer = null;
+
+  const flushList = () => {
+    if (!listBuffer) return;
+    nodes.push(
+      <ul key={`list-${nodes.length}`} className="list-disc list-inside space-y-1 text-sm text-gray-200">
+        {listBuffer.map((item, idx) => (
+          <li key={`item-${idx}`}>{parseInline(item)}</li>
+        ))}
+      </ul>
+    );
+    listBuffer = null;
+  };
+
+  lines.forEach((rawLine, index) => {
+    const line = rawLine.trimEnd();
+    if (!line) {
+      flushList();
+      return;
+    }
+
+    const headingMatch = line.match(/^(#{1,4})\s+(.*)$/);
+    const listMatch = line.match(/^[-*+]\s+(.*)$/);
+
+    if (listMatch) {
+      if (!listBuffer) listBuffer = [];
+      listBuffer.push(listMatch[1]);
+      return;
+    }
+
+    flushList();
+
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      const content = parseInline(headingMatch[2]);
+      const headingProps = {
+        key: `heading-${index}`,
+        className: level === 1
+          ? 'text-lg font-semibold text-white mb-2'
+          : level === 2
+          ? 'text-base font-semibold text-slate-100 mb-2'
+          : 'text-sm font-semibold text-slate-200 mb-1'
+      };
+      if (level === 1) {
+        nodes.push(<h3 {...headingProps}>{content}</h3>);
+      } else if (level === 2) {
+        nodes.push(<h4 {...headingProps}>{content}</h4>);
+      } else {
+        nodes.push(<p {...headingProps}>{content}</p>);
+      }
+      return;
+    }
+
+    nodes.push(
+      <p key={`para-${index}`} className="text-[14.5px] leading-relaxed text-slate-200 whitespace-pre-wrap">
+        {parseInline(line)}
+      </p>
+    );
   });
+
+  flushList();
+  return nodes;
 }
 
 export default function RagChat() {
