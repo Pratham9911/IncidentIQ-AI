@@ -88,9 +88,17 @@ def log_incident(
         max_distance=0.30  # Enforce similarity >= 70%
     )
 
-    # 4. Generate AI resolution recommendation
+    # 4. Generate AI resolution recommendation. Always return a useful answer,
+    #    even when there are no historical matches.
+    fallback_used = False
     if not similar_incidents:
-        ai_rec = "no chunks - I don't know"
+        ai_rec = generate_resolution_recommendation(
+            new_title=request.title,
+            new_description=request.description,
+            new_service=request.service.value,
+            similar_incidents=[]
+        )
+        fallback_used = True
     else:
         ai_rec = generate_resolution_recommendation(
             new_title=request.title,
@@ -130,7 +138,8 @@ def log_incident(
             "created_at": new_incident.created_at.isoformat() if new_incident.created_at else None
         },
         "similar_past_incidents": similar_incidents,
-        "ai_recommendation": ai_rec
+        "ai_recommendation": ai_rec,
+        "fallback_search_used": fallback_used
     }
 
 @router.get("", response_model=List[dict])
@@ -193,9 +202,16 @@ def search_incidents(
         max_distance=0.30  # Enforce similarity >= 70%
     )
 
-    # 3. Generate AI insights based on semantic search query
+    # 3. Generate AI insights based on semantic search query. Always provide an actionable response.
+    fallback_used = False
     if not similar_incidents:
-        ai_rec = "no chunks - I don't know"
+        ai_rec = generate_resolution_recommendation(
+            new_title=query,
+            new_description=f"Query search for: {query}",
+            new_service="General Diagnostic",
+            similar_incidents=[]
+        )
+        fallback_used = True
     else:
         ai_rec = generate_resolution_recommendation(
             new_title=query,
@@ -207,5 +223,6 @@ def search_incidents(
     return {
         "query": query,
         "results": similar_incidents,
-        "ai_recommendation": ai_rec
+        "ai_recommendation": ai_rec,
+        "fallback_search_used": fallback_used
     }

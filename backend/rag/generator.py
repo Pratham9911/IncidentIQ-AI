@@ -18,12 +18,12 @@ def generate_resolution_recommendation(
 ) -> str:
     
     if not similar_incidents:
-        # Generates a standard baseline troubleshooting suggestion
+        # Generates a standard baseline troubleshooting suggestion when project history has no matches.
         prompt = f"""
 You are IncidentIQ, an advanced IT operations and system incident resolution assistant.
 
-A new incident has been reported, but no matching past incidents were found in the database.
-Based on the ticket description, provide a highly professional, structured, and detailed initial triage and diagnostic step recommendation.
+A new incident has been reported, but no matching past incidents were found in the project database.
+Based on the ticket description, provide a highly professional, structured, and detailed initial triage and diagnostic recommendation.
 
 New Incident Details:
 - Title: {new_title}
@@ -31,8 +31,11 @@ New Incident Details:
 - Description: {new_description}
 
 Instructions:
-- Provide a clear, actionable list of diagnostics steps.
+- Use only the new incident details to produce a useful answer if no historical matches exist.
+- Do not answer with "I don't know" or vague phrases. Instead provide concrete next steps, checks, and likely root causes.
+- Provide a clear, actionable list of diagnostic steps.
 - Suggest potential root causes tailored to the service: "{new_service}".
+- If you are unsure, give the most probable troubleshooting path and how to confirm it.
 - Present the response in professional markdown format.
 """
     else:
@@ -65,8 +68,10 @@ Similar Past Incidents Context:
 
 Instructions:
 - Correlate details from the past incidents to suggest immediate steps or resolutions.
+- If the past incidents are not a strong match, still provide a useful action plan based on the new incident details.
 - For each resolution strategy or recommendation, you MUST clearly state WHO originally solved it (cite "Solved/Logged By") and WHEN (cite "Date Resolved") so that the engineers have absolute transparency on whose historical solution this is.
 - Outline what worked in the past and what to check first.
+- Do not answer with vague or non-committal language; if uncertain, state the confidence level for each recommendation.
 - Keep the response highly structured, technical, and professional using markdown.
 """
 

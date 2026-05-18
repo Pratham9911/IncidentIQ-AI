@@ -113,16 +113,23 @@ export default function RagChat() {
       const chunks = data.results || [];
       setTopKChunks(chunks);
 
+      const normalizedAnswer = data.ai_recommendation?.trim();
+      const noAnswerFallback = !normalizedAnswer || /no chunks|don't know|unable to generate|unknown|failed/i.test(normalizedAnswer);
+      const answerContent = noAnswerFallback
+        ? "No strong historical answer was available. I have provided an actionable troubleshooting plan based on your query and the issue details."
+        : normalizedAnswer;
+
       // 4. Append AI response with correlation insights
       const aiMsg = {
         id: `m_ai_${Date.now()}`,
         sender: "IncidentIQ AI",
         avatar: "AI",
         role: "SRE Expert",
-        content: data.ai_recommendation,
+        content: answerContent,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isAI: true,
-        similarCount: chunks.length
+        similarCount: chunks.length,
+        fallbackUsed: noAnswerFallback || data.fallback_search_used
       };
 
       setMessages((prev) => [...prev, aiMsg]);
@@ -281,12 +288,19 @@ export default function RagChat() {
           ))}
 
           {topKChunks.length === 0 && !isAiLoading && (
-            <div className="h-full border border-dashed border-dark-border rounded-xl flex flex-col items-center justify-center p-6 text-center bg-dark-card/10">
-              <Layout className="w-8 h-8 text-gray-600 mb-2" />
-              <h4 className="text-xs font-semibold text-gray-400">Context Window Empty</h4>
-              <p className="text-[10px] text-gray-600 mt-1 max-w-[200px]">
-                Type a query in the copilot chat box to retrieve semantic database correlations.
+            <div className="h-full border border-dashed border-dark-border rounded-xl flex flex-col items-start justify-center p-6 text-left bg-dark-card/10 space-y-3">
+              <div className="flex items-center gap-2 text-gray-400">
+                <Layout className="w-5 h-5" />
+                <span className="text-xs font-semibold uppercase tracking-[0.2em]">Fallback Search Active</span>
+              </div>
+              <h4 className="text-sm font-semibold text-white">No historical matches found</h4>
+              <p className="text-[10px] text-gray-500 leading-relaxed">
+                The project incident log did not return a strong semantic match. IncidentIQ is now using a broader diagnostic fallback to keep you moving.
               </p>
+              <div className="rounded-xl bg-[#0d1326] border border-dark-border p-3 text-[10px] text-gray-300">
+                <p className="font-semibold text-gray-200 mb-1">Fallback mode</p>
+                <p>Only use TinyFish-style broader search reasoning when no prior incident data is available.</p>
+              </div>
             </div>
           )}
 
