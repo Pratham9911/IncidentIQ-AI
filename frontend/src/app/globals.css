@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@theme {
+  --color-neon-blue: #00f3ff;
+  --color-neon-purple: #b026ff;
+  --color-dark-bg: #0b0f19;
+  --color-dark-card: #111827;
+  --color-dark-border: #1f2937;
+}
+
+@layer base {
+  body {
+    @apply bg-dark-bg text-gray-100 antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .text-neon {
+    text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+  }
+  .border-neon {
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+  }
+  .bg-neon-glow {
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.15);
+  }
+}
