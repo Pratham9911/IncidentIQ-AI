@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
-  LayoutDashboard, AlertTriangle, SearchCode, Users, Network, Activity, ShieldAlert, LogOut
+  LayoutDashboard, AlertTriangle, SearchCode, Users, Network, Activity, ShieldAlert, LogOut, MessageSquare
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -11,7 +11,7 @@ const NAV_ITEMS = [
   { path: '/repo-intelligence', label: 'Repo Intelligence', icon: SearchCode },
   { path: '/expert-routing', label: 'Expert Routing', icon: Users },
   { path: '/knowledge-graph', label: 'Knowledge Graph', icon: Network },
-  { path: '/company-feed', label: 'Company Feed', icon: Activity },
+  { path: '/collaboration', label: 'Collaboration Hub', icon: MessageSquare },
 ];
 
 export default function DashboardLayout({ children }) {
